@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0E0E11">
+<title>Your FSM platform: how I'd run it</title>
+<meta name="description" content="A CTO plan for Ahmed's twelve-module field service platform: how the work runs, the stack, the architecture, what carries over from OPSY, and who builds it.">
+<meta property="og:title" content="Your FSM platform: how I'd run it">
+<meta property="og:description" content="CTO plan by Dmitriy Melnichenko: stack, architecture, what carries over from OPSY, and who builds it.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237C4DEE'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0E0E11;--subtle:#17171B;--elevated:#1E1E23;--text:#FFFFFF;--secondary:#9E9EA8;--muted:#8A8A94;--soft:#C9C9D1;--border:#26262C;--border-strong:#3C3C44;--accent:#7C4DEE;--accent-text:#9C7CF4}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Instrument Sans','Helvetica Neue',Helvetica,sans-serif;font-size:16px;line-height:1.5}
+a{color:var(--accent-text)}a:hover{color:#C2AEFA}
+button{font-family:inherit;color:inherit}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 20px 64px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 0;border-bottom:1px solid var(--border)}
+.brand{font-size:18px;font-weight:600;letter-spacing:-.2px}
+.tag{font-size:13px;color:var(--secondary);border:1px solid var(--border-strong);border-radius:999px;padding:6px 12px}
+.hero{padding:40px 0 8px;display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-size:14px;color:var(--accent-text)}
+h1{margin:0;font-size:40px;line-height:1.08;font-weight:600;letter-spacing:-.8px}
+.lead{margin:0;font-size:17px;color:var(--secondary)}
+.byline{font-size:15px}
+section{margin-top:56px;display:flex;flex-direction:column;gap:16px}
+section.loop{margin-top:28px}
+h2{margin:0;font-size:26px;line-height:1.2;font-weight:600;letter-spacing:-.4px}
+p{margin:0}
+.muted{color:var(--secondary)}
+.small{font-size:15px}
+.card{background:var(--subtle);border:1px solid var(--border);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.card.strong{border-color:var(--border-strong)}
+.card.accent{border-color:var(--accent)}
+.label{font-size:13px;color:var(--secondary)}
+.step{display:flex;align-items:center;gap:12px}
+.dot{flex:0 0 32px;height:32px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600}
+.principles{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.principle{background:var(--subtle);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;gap:12px}
+.principle b{color:var(--accent-text);font-weight:600;flex:0 0 22px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--border-strong);background:var(--subtle);font-size:15px;cursor:pointer}
+.pill[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
+.detail-choice{font-size:22px;font-weight:600;line-height:1.25}
+.detail-why{color:var(--soft)}
+.arch{display:flex;flex-direction:column;gap:8px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.box{background:var(--elevated);border:1px solid var(--border-strong);border-radius:12px;padding:12px;font-size:14px;text-align:center}
+.box.api{background:var(--accent);border-color:var(--accent);font-weight:600;font-size:16px;padding:14px}
+.mod{background:var(--subtle);border:1px solid var(--border);border-radius:10px;padding:10px 6px;font-size:13px;text-align:center}
+.join{text-align:center;color:var(--muted);font-size:13px}
+.seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;background:var(--subtle);border:1px solid var(--border);border-radius:999px;padding:4px}
+.seg button{min-height:44px;border-radius:999px;border:none;background:transparent;color:var(--secondary);font-size:15px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--text)}
+.rows{display:flex;flex-direction:column;gap:10px}
+.row{background:var(--subtle);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.row .what{font-size:17px;font-weight:500}
+.row .bring{font-size:14px;color:var(--secondary)}
+.row .bring span{color:var(--accent-text)}
+[data-side="yours"] .opsy-text,[data-side="opsy"] .yours-text{display:none}
+[data-mode="team"] .panel-cto,[data-mode="cto"] .panel-team{display:none}
+.tiers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tier{min-height:64px;border-radius:12px;border:1px solid var(--border-strong);background:var(--subtle);font-size:14px;cursor:pointer;padding:10px;text-align:left}
+.tier[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
+.rate{display:flex;align-items:baseline;gap:8px}
+.rate strong{font-size:32px;font-weight:600;letter-spacing:-.5px}
+.stepper-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:44px;height:44px;border-radius:999px;border:1px solid var(--border-strong);background:var(--elevated);font-size:22px;cursor:pointer}
+.stepper button:disabled{opacity:.35;cursor:default}
+.count{min-width:28px;text-align:center;font-size:26px;font-weight:600}
+.sum{border-top:1px solid var(--border);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.sum div{display:flex;justify-content:space-between;gap:12px}
+.sum dt{color:var(--secondary)}
+.sum dd{margin:0;font-weight:600;text-align:right}
+.sum dd.free{color:var(--accent-text)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:14px;border:1px solid var(--border-strong);border-radius:999px;padding:6px 12px}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.checks li{display:flex;gap:10px;align-items:flex-start}
+.checks svg{flex:0 0 20px;margin-top:2px}
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--secondary)}
+@media (min-width:640px){h1{font-size:52px}.principles{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3{grid-template-columns:repeat(4,minmax(0,1fr))}.grid2{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+<div class="brand">2muchcoffee</div>
+<div class="tag">CTO plan</div>
+</header>
+
+<div class="hero">
+<div class="eyebrow">Prepared for Ahmed · 9 October 2026</div>
+<h1>Your FSM platform: how I'd run it</h1>
+<p class="lead">A CTO plan for the twelve-module platform in your brief: how the work runs, the stack, the architecture, what carries over from OPSY, and who builds it.</p>
+<div class="byline">Dmitriy Melnichenko, CTO</div>
+</div>
+
+<section class="loop card" aria-label="The daily loop">
+<div class="label">The daily loop the platform runs</div>
+<div class="step"><div class="dot">1</div><div>The office assigns the work: quote, job, schedule</div></div>
+<div class="step"><div class="dot">2</div><div>Technicians report back from the field app, with or without reception</div></div>
+<div class="step"><div class="dot">3</div><div>Managers see it live, and the invoice goes out</div></div>
+</section>
+
+<section>
+<h2>How I'd run it</h2>
+<div class="principles">
+<div class="principle"><b>01</b><div>I own the architecture and write every major decision into an architecture record, so any developer, yours or ours, can see what was decided and why.</div></div>
+<div class="principle"><b>02</b><div>You own the code, the AWS account and the data from day one.</div></div>
+<div class="principle"><b>03</b><div>Work runs in two-week cycles: plan, build, show you working software, release.</div></div>
+<div class="principle"><b>04</b><div>Every change goes through code review and automated tests before it reaches production, and I review anything that touches the architecture myself.</div></div>
+<div class="principle"><b>05</b><div>AI agents are users of the same API as your staff, with their own permissions, approval steps for sensitive actions and a full audit trail.</div></div>
+<div class="principle"><b>06</b><div>Engineers build with AI coding tools (Cursor, Claude Code) under the same review rules. That's how OPSY was built.</div></div>
+<div class="principle"><b>07</b><div>Build the platform for every trade and launch it with one. Solar installation is the natural first trade for you, and it runs the whole quote, install and invoice loop.</div></div>
+</div>
+</section>
+
+<section id="stack">
+<h2>Stack</h2>
+<p class="muted">Tap a layer to see the choice and the reason for it.</p>
+<div class="pills" role="group" aria-label="Stack layers">
+<button type="button" class="pill" aria-pressed="true" data-layer="0">Language</button>
+<button type="button" class="pill" aria-pressed="false" data-layer="1">Backend</button>
+<button type="button" class="pill" aria-pressed="false" data-layer="2">API</button>
+<button type="button" class="pill" aria-pressed="false" data-layer="3">Database</button>
+<button type="button" class="pill" aria-pressed="false" data-layer="4">Background work</button>
+<button type="button" class="pill" aria-pressed="false" data-layer="5">Office app</button>
+<button type="button" class="pill" aria-pressed="false" data-layer="6">Technician app</button>
+<button type="button" class="pill" aria-pressed="false" data-layer="7">AI agents</button>
+<button type="button" class="pill" aria-pressed="false" data-layer="8">Cloud</button>
+</div>
+<div class="card strong" aria-live="polite">
+<div class="label" id="layer-label">Language</div>
+<div class="detail-choice" id="layer-choice">TypeScript end to end</div>
+<div class="detail-why" id="layer-why">Largest hiring pool; the API, web app and mobile app share one language and one set of types.</div>
+</div>
+<p class="muted small">Everything in the stack is open source, so the running cost is hosting rather than licences.</p>
+</section>
+
+<section>
+<h2>Architecture</h2>
+<p class="muted">One NestJS application split into modules that match your twelve areas, over a shared core. Each module owns its data and talks to the others through defined interfaces, so pulling one out into its own service later is a contained job.</p>
+<div class="arch">
+<div class="grid2">
+<div class="box">Office app</div><div class="box">Technician app</div><div class="box">Integrations</div><div class="box">AI agents</div>
+</div>
+<div class="join">all through</div>
+<div class="box api">One documented REST API, with permissions and audit on every call</div>
+<div class="join">into twelve modules</div>
+<div class="grid3">
+<div class="mod">CRM</div><div class="mod">Sales</div><div class="mod">Quoting</div><div class="mod">Jobs</div><div class="mod">Scheduling</div><div class="mod">Field ops</div><div class="mod">Stock</div><div class="mod">Purchasing</div><div class="mod">Finance</div><div class="mod">Compliance</div><div class="mod">Service</div><div class="mod">Reporting</div>
+</div>
+<div class="box">Shared core: tenants, users and roles, audit log, files, notifications</div>
+<div class="box">PostgreSQL and Redis on AWS, Sydney region</div>
+</div>
+<p class="muted small">The technician app works offline and syncs when reception comes back.</p>
+</section>
+
+<section id="opsy" data-side="yours">
+<h2>What carries over from OPSY</h2>
+<p class="muted">OPSY, which you saw on our call, runs the same daily loop as a trades business. That loop is the hard part of any field platform, and we have built it once already.</p>
+<div class="seg" role="group" aria-label="Compare OPSY with your platform">
+<button type="button" data-side-btn="opsy" aria-pressed="false">In OPSY</button>
+<button type="button" data-side-btn="yours" aria-pressed="true">In your platform</button>
+</div>
+<div class="rows">
+<div class="row"><div class="what"><span class="opsy-text">Guard shifts across sites</span><span class="yours-text">Technician scheduling and dispatch across jobs</span></div><div class="bring"><span>Carries over: </span>The scheduling model and how changes reach people in the field</div></div>
+<div class="row"><div class="what"><span class="opsy-text">Guard app: check-ins, patrol tracking, incident logging, alerts</span><span class="yours-text">Technician app: check-in and out, job progress, photos, forms, alerts</span></div><div class="bring"><span>Carries over: </span>The check-in, field-reporting and alert flows</div></div>
+<div class="row"><div class="what"><span class="opsy-text">Live dashboard of guard activity</span><span class="yours-text">Dispatch board with live job status</span></div><div class="bring"><span>Carries over: </span>Live status from the field to the office</div></div>
+<div class="row"><div class="what"><span class="opsy-text">Guards, supervisors and admins each see their own slice</span><span class="yours-text">Technicians, office staff and managers, with AI agents as one more role</span></div><div class="bring"><span>Carries over: </span>The role-based access model, built into the API from day one</div></div>
+<div class="row"><div class="what"><span class="opsy-text">Incident logs and reporting</span><span class="yours-text">Job reports, compliance forms and certificates</span></div><div class="bring"><span>Carries over: </span>Turning field data into reports managers use</div></div>
+<div class="row"><div class="what"><span class="opsy-text">White-label deployment, with clients owning their branded apps and data</span><span class="yours-text">Your customers' branding on quotes, invoices and the portal</span></div><div class="bring"><span>Carries over: </span>Per-customer branding</div></div>
+</div>
+<p class="muted small">What carries over is the design thinking, the lessons and the team that built it, so Phase 0 starts from patterns we already run rather than a blank page. The code for your platform is written for you and is yours. The new ground is quoting, stock, purchasing and finance, and an offline-first technician app in React Native (OPSY's guard app is Ionic); Phase 0 designs those from your Figma.</p>
+</section>
+
+<section id="team" data-mode="team">
+<h2>Who builds it</h2>
+<div class="seg" role="group" aria-label="Choose how the platform is built">
+<button type="button" data-mode-btn="cto" aria-pressed="false">CTO only</button>
+<button type="button" data-mode-btn="team" aria-pressed="true">CTO plus our team</button>
+</div>
+
+<div class="card strong panel-cto">
+<p>Your developers build. I run Phase 0, then act as your CTO: architecture, planning, code review and releases.</p>
+<div class="tiers" role="group" aria-label="CTO engagement">
+<button type="button" class="tier" data-tier="light" aria-pressed="true">A few hours a week</button>
+<button type="button" class="tier" data-tier="core" aria-pressed="false">Around 20 hours a week</button>
+</div>
+<div class="rate" aria-live="polite"><strong id="cto-rate">$90</strong><span class="muted">an hour, for the hours used</span></div>
+</div>
+
+<div class="card strong panel-team">
+<p>A team in the same shape that built OPSY: engineers across NestJS, React and React Native, with DevOps and design help when a phase needs it, under me as CTO.</p>
+<div class="stepper-row">
+<div><div class="label">Engineers, full time</div><div class="muted" style="font-size:14px">$35 an hour each</div></div>
+<div class="stepper">
+<button type="button" id="dec" aria-label="One engineer fewer">&minus;</button>
+<div class="count" id="count" aria-live="polite">3</div>
+<button type="button" id="inc" aria-label="One engineer more">+</button>
+</div>
+</div>
+<dl class="sum">
+<div><dt>Team</dt><dd id="team-monthly">Around $18k a month</dd></div>
+<div><dt>My CTO work</dt><dd id="cto-line" class="free">Included at no charge</dd></div>
+<div><dt>Project management</dt><dd>Included, or a flat monthly rate</dd></div>
+</dl>
+<p class="muted" style="font-size:14px">With two or more of our engineers on the build, my CTO work is included at no charge, because I already trust how they work and it takes little of my time. Phase 0 sets how many engineers you need and for how long.</p>
+</div>
+
+<p class="muted small">Either way you keep the independence of having a separate CTO: the code, the AWS account and the data are yours from day one, every decision is in the architecture record, and every change goes through review, so you can add your own developers or move the work at any point.</p>
+</section>
+
+<section>
+<h2>Next step: Phase 0</h2>
+<div class="card accent">
+<div class="chips"><div class="chip">Two weeks</div><div class="chip">Capped at 60 hours</div><div class="chip">Around $3k</div></div>
+<p>I go through your Stage 1 Figma with you screen by screen. You get:</p>
+<ul class="checks">
+<li><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#9C7CF4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>The architecture record</span></li>
+<li><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#9C7CF4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>The data model for all twelve modules</span></li>
+<li><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#9C7CF4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>The API and permission model, for staff and AI agents</span></li>
+<li><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#9C7CF4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>A costed plan for the first release: scope, hours, team size and timeline</span></li>
+</ul>
+<p class="muted">It's yours to keep, whoever builds the platform.</p>
+</div>
+</section>
+
+<footer>
+<div>Questions or changes: reply in our Upwork chat.</div>
+<div>Dmitriy Melnichenko · 2muchcoffee</div>
+</footer>
+
+</div>
+<script>
+(function () {
+  var layers = [
+    ['Language', 'TypeScript end to end', 'Largest hiring pool; the API, web app and mobile app share one language and one set of types.'],
+    ['Backend', 'NestJS, modular monolith', 'One module per area in your brief; any module can become its own service later if load or team size calls for it.'],
+    ['API', 'One documented REST API', 'The same API serves your apps, integrations and AI agents, so everyone gets the same permissions and audit trail.'],
+    ['Database', 'PostgreSQL', 'Real transactions for quotes, jobs, stock and invoices; tenant isolation; AI search without a separate vector database.'],
+    ['Background work', 'Redis queues', 'Scheduling, notifications and integration sync.'],
+    ['Office app', 'React', 'Dispatch board, quoting, admin.'],
+    ['Technician app', 'React Native, offline-first', 'iOS and Android from one codebase; keeps working when crews lose reception on site.'],
+    ['AI agents', 'LangGraph', 'Agents call the same API as staff, with scoped permissions and approval steps.'],
+    ['Cloud', 'AWS, Sydney region', 'Customer data stays in Australia; infrastructure as code, staging and production from the first sprint.']
+  ];
+  function press(group, active) { group.forEach(function (b) { b.setAttribute('aria-pressed', b === active ? 'true' : 'false'); }); }
+
+  var pills = Array.prototype.slice.call(document.querySelectorAll('[data-layer]'));
+  pills.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var l = layers[+b.getAttribute('data-layer')];
+      press(pills, b);
+      document.getElementById('layer-label').textContent = l[0];
+      document.getElementById('layer-choice').textContent = l[1];
+      document.getElementById('layer-why').textContent = l[2];
+    });
+  });
+
+  var opsy = document.getElementById('opsy');
+  var sideBtns = Array.prototype.slice.call(document.querySelectorAll('[data-side-btn]'));
+  sideBtns.forEach(function (b) {
+    b.addEventListener('click', function () { opsy.setAttribute('data-side', b.getAttribute('data-side-btn')); press(sideBtns, b); });
+  });
+
+  var team = document.getElementById('team');
+  var modeBtns = Array.prototype.slice.call(document.querySelectorAll('[data-mode-btn]'));
+  modeBtns.forEach(function (b) {
+    b.addEventListener('click', function () { team.setAttribute('data-mode', b.getAttribute('data-mode-btn')); press(modeBtns, b); });
+  });
+
+  var tiers = Array.prototype.slice.call(document.querySelectorAll('[data-tier]'));
+  tiers.forEach(function (b) {
+    b.addEventListener('click', function () {
+      press(tiers, b);
+      document.getElementById('cto-rate').textContent = b.getAttribute('data-tier') === 'light' ? '$90' : '$50';
+    });
+  });
+
+  var n = 3, dec = document.getElementById('dec'), inc = document.getElementById('inc');
+  function renderTeam() {
+    document.getElementById('count').textContent = n;
+    document.getElementById('team-monthly').textContent = 'Around $' + Math.round(n * 35 * 40 * 52 / 12 / 1000) + 'k a month';
+    var line = document.getElementById('cto-line');
+    line.textContent = n >= 2 ? 'Included at no charge' : '$90 or $50 an hour';
+    line.className = n >= 2 ? 'free' : '';
+    dec.disabled = n <= 1; inc.disabled = n >= 6;
+  }
+  dec.addEventListener('click', function () { if (n > 1) { n--; renderTeam(); } });
+  inc.addEventListener('click', function () { if (n < 6) { n++; renderTeam(); } });
+  renderTeam();
+})();
+</script>
+</body>
+</html>
